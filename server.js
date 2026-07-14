@@ -87,8 +87,6 @@ app.post('/api/inscription', async (req, res) => {
     }
 });
 
-
-// Route API pour la connexion
 app.post('/api/connexion', async (req, res) => {
     const { id, password } = req.body;
 
@@ -99,17 +97,19 @@ app.post('/api/connexion', async (req, res) => {
             return res.status(401).json({ message: "Identifiants invalides." });
         }
 
-        // Retourner le nom ET le rôle de l'utilisateur
+        // On ajoute l'URL de redirection dans la réponse JSON
         res.status(200).json({
             message: "Connexion réussie !",
             nom: rows[0].nom,
-            role: rows[0].role
+            role: rows[0].role,
+            redirectUrl: '/catalogue.html' // L'URL de destination
         });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur." });
     }
 });
+
 
 // Middleware de vérification d'admin
 function verifierAdmin(req, res, next) {
