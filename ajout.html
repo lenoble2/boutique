@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter et Gérer les Produits</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
+        .form-card, .list-card { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto; }
+        h2 { margin-top: 0; color: #00008b; text-align: center; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .file-label { font-size: 0.85em; color: #555; margin-top: 10px; display: block; }
+        button { width: 100%; padding: 12px; background: #00008b; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <h2>Ajouter un produit</h2>
+    <form id="ajoutForm" enctype="multipart/form-data">
+        <input type="text" id="nom" name="nom" placeholder="Nom du produit" required>
+        <input type="text" id="categorie" name="categorie" placeholder="Catégorie" required>
+        <input type="number" id="prix" name="prix" placeholder="Prix (XOF)" required>
+        <textarea id="description" name="description" placeholder="Description courte" rows="3"></textarea>
+        <input type="number" id="stock" name="stock" placeholder="Quantité en stock" required>
+        
+        <label class="file-label">Image principale :</label>
+        <input type="file" id="image1" name="image1" accept="image/*" required>
+        
+        <label class="file-label">Image 2 :</label>
+        <input type="file" id="image2" name="image2" accept="image/*">
+        
+        <label class="file-label">Image 3 :</label>
+        <input type="file" id="image3" name="image3" accept="image/*">
+        
+        <button type="submit">Enregistrer le produit</button>
+    </form>
+</div>
+
+<div class="list-card">
+    <h2>Liste des produits</h2>
+    <div id="liste-produits">Chargement...</div>
+</div>
+
+<script>
+    // Charger la liste au démarrage
+    async function chargerProduits() {
+        const res = await fetch('/api/produits');
+        const produits = await res.json();
+        const container = document.getElementById('liste-produits');
+        container.innerHTML = produits.map(p => `
+            <div class="item">
+                <span>${p.nom} - ${p.prix} XOF</span>
+                <span class="delete-btn" onclick="supprimerProduit(${p.id})">✕</span>
+            </div>
+        `).join('');
+    }
+
+    // Suppression
+    async function supprimerProduit(id) {
+        if(confirm('Supprimer ce produit ?')) {
+            await fetch(`/api/supprimer-produit/${id}`, { method: 'DELETE' });
+            chargerProduits();
+        }
+    }
+
+    // Ajout
+    document.getElementById('ajoutForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(document.getElementById('ajoutForm'));
+        const res = await fetch('/api/ajouter-produit', { method: 'POST', body: formData });
+        const data = await res.json();
+        alert(data.message);
+        document.getElementById('ajoutForm').reset();
+        chargerProduits();
+    });
+
+    chargerProduits();
+</script>
+</body>
+</html>

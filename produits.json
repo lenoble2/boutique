@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "nom": "Smartphone X",
+        "prix": "150 000",
+        "categorie": "Electronique",
+        "image": "https://via.placeholder.com/150"
+    },
+    {
+        "id": 2,
+        "nom": "Casque Audio",
+        "prix": "15 000",
+        "categorie": "Accessoires",
+        "image": "https://via.placeholder.com/150"
+    }
+]

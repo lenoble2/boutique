@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Admin</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 40px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #00008b; color: white; }
+        .btn-back { background: #555; color: white; padding: 10px; border-radius: 8px; text-decoration: none; }
+        .status-btn { width: 25px; height: 25px; border-radius: 50%; border: none; cursor: pointer; display: block; margin: 0 auto; }
+        .bg-red { background-color: red; }
+        .bg-green { background-color: green; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Tableau de bord administrateur</h2>
+    <a href="catalogue.html" class="btn-back">Retour au catalogue</a>
+
+    <h3>Liste des utilisateurs</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro (ID)</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Mot de passe</th>
+                <th>Rôle</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+    </table>
+
+    <h3>Historique des commandes</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID Commande</th>
+                <th>ID Client</th>
+                <th>Adresse</th>
+                <th>Téléphone</th>
+                <th>Date</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody id="commandesTableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    if (localStorage.getItem('userRole') !== 'admin') {
+        alert("Accès refusé !");
+        window.location.href = 'catalogue.html';
+    }
+
+    async function chargerUtilisateurs() {
+        const res = await fetch('/api/utilisateurs', { headers: { 'x-user-role': localStorage.getItem('userRole') } });
+        const users = await res.json();
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            tbody.innerHTML += `<tr><td>${user.id}</td><td>${user.nom}</td><td>${user.email}</td><td>${user.password}</td><td>${user.role}</td></tr>`;
+        });
+    }
+
+    async function chargerCommandes() {
+        const res = await fetch('/api/commandes', { headers: { 'x-user-role': localStorage.getItem('userRole') } });
+        const commandes = await res.json();
+
+        const tbody = document.getElementById('commandesTableBody');
+        tbody.innerHTML = '';
+        commandes.forEach(c => {
+            const statusClass = c.statut === 'paye' ? 'bg-green' : 'bg-green';
+            
+            // Fusion de l'article et du prix sous l'ID commande
+            const infoCmd = `${c.id_commande}<br><small><strong>${c.nom_article}</strong> - ${c.prix} XOF</small>`;
+            
+            // Logique pour récupérer l'heure, soit depuis la base, soit extraite de l'ID
+            let heureAffichee = c.heure_commande;
+            if (!heureAffichee && c.id_commande) {
+                const idStr = c.id_commande.toString();
+                const timePart = idStr.slice(-4); 
+                heureAffichee = timePart.slice(0, 2) + ":" + timePart.slice(2);
+            }
+            
+            const dateComplete = `${c.date_commande} à ${heureAffichee || '00:00'}`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${infoCmd}</td>
+                    <td>${c.id_client}</td>
+                    <td>${c.adresse || 'N/A'}</td>
+                    <td>${c.telephone || 'N/A'}</td>
+                    <td>${dateComplete}</td>
+                    <td><button class="status-btn ${statusClass}" onclick="changerStatut('${c.id_commande}')"></button></td>
+                </tr>`;
+        });
+    }
+
+    async function changerStatut(id) {
+        await fetch('/api/update-statut', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-role': localStorage.getItem('userRole') },
+            body: JSON.stringify({ id_commande: id })
+        });
+        chargerCommandes();
+    }
+
+    chargerUtilisateurs();
+    chargerCommandes();
+</script>
+
+</body>
+</html>

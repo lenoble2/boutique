@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Panier</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
+        .panier-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding: 5px 0; }
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; color: #00008b; }
+        .form-group { margin-top: 20px; }
+        .form-group input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn-payer { background: #2e7d32; color: white; padding: 15px; border-radius: 15px; border: none; width: 100%; cursor: pointer; margin-bottom: 10px; }
+        .btn-vider { background: #d32f2f; color: white; padding: 10px; border-radius: 10px; border: none; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="panier-card">
+        <h2>Votre Panier</h2>
+        <div id="panier-items"></div>
+        <div class="total" id="total-display">Total : 0 XOF</div>
+
+        <div class="form-group">
+            <input type="text" id="adresse" placeholder="Adresse de livraison" required>
+            <input type="tel" id="telephone" placeholder="Numéro de téléphone" required>
+        </div>
+
+        <button class="btn-payer" onclick="payerViaLeanPay()">Payer avec LeanPay</button>
+        <button class="btn-vider" onclick="viderPanier()">Vider le panier</button>
+    </div>
+
+    <script>
+        let panier = JSON.parse(localStorage.getItem('panier')) || [];
+        const container = document.getElementById('panier-items');
+        const displayTotal = document.getElementById('total-display');
+        let total = 0;
+
+        // Fonction pour supprimer un article
+        function supprimerArticle(index) {
+            panier.splice(index, 1);
+            localStorage.setItem('panier', JSON.stringify(panier));
+            location.reload();
+        }
+
+        panier.forEach((item, index) => {
+            const prixNum = parseInt(item.prix.replace(/\D/g, '')); // Nettoyage du prix
+            total += prixNum;
+            container.innerHTML += `
+                <div class="item">
+                    <span>${item.nom}</span>
+                    <span>
+                        ${item.prix} 
+                        <span class="delete-btn" onclick="supprimerArticle(${index})">&times;</span>
+                    </span>
+                </div>`;
+        });
+
+        displayTotal.innerText = `Total : ${total.toLocaleString()} XOF`;
+
+        async function payerViaLeanPay() {
+            const adresse = document.getElementById('adresse').value;
+            const telephone = document.getElementById('telephone').value;
+
+            if (panier.length === 0) {
+                alert("Votre panier est vide.");
+                return;
+            }
+
+            if (!adresse || !telephone) {
+                alert("Veuillez remplir votre adresse et votre numéro de téléphone.");
+                return;
+            }
+
+            const articlesNoms = panier.map(item => item.nom).join(', ');
+
+            try {
+                const res = await fetch('/api/ajouter-commande', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_client: telephone,
+                        nom_article: articlesNoms,
+                        prix: total,
+                        adresse: adresse,
+                        telephone: telephone
+                    })
+                });
+
+                if (res.ok) {
+                    alert("Paiement effectué avec succès !");
+                    localStorage.removeItem('panier');
+                    window.location.href = 'catalogue.html';
+                } else {
+                    alert("Erreur lors du paiement.");
+                }
+            } catch (err) {
+                alert("Erreur de connexion au serveur.");
+            }
+        }
+
+        function viderPanier() {
+            localStorage.removeItem('panier');
+            location.reload();
+        }
+    </script>
+</body>
+</html>

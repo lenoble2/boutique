@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - LeanPay</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .form-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+        h2 { text-align: center; color: #00008b; }
+        label { display: block; margin: 15px 0 5px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        .btn-submit { width: 100%; background: #00008b; color: white; padding: 15px; border-radius: 15px; border: none; cursor: pointer; font-size: 1em; margin-top: 20px; }
+        .btn-submit:hover { background: #000066; }
+        .register-link { text-align: center; margin-top: 15px; display: block; color: #00008b; text-decoration: none; font-size: 0.9em; }
+        .register-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>                                                                                            
+    <div class="form-card">                                                                               
+        <h2>Connexion Lean</h2>
+        <form id="loginForm">
+            <label for="phone">N° ☎️ (Identifiant)</label>
+            <input type="tel" id="phone" placeholder="Ex: 0707070707" required>
+
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" required>
+
+            <button type="submit" class="btn-submit">Se connecter</button>
+            <a href="inscription.html" class="register-link">Pas encore inscrit ? Créer un compte</a>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const phoneValue = document.getElementById('phone').value;
+            const loginData = {
+                id: phoneValue,
+                password: document.getElementById('password').value
+            };
+
+            fetch('/api/connexion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loginData)
+            })
+            .then(response => response.json().then(data => {
+                if (!response.ok) throw new Error(data.message);
+                return data;
+            }))
+            .then(data => {
+                // Sauvegarde de toutes les informations nécessaires dans le localStorage
+                localStorage.setItem('userPhone', phoneValue);
+                localStorage.setItem('userName', data.nom);
+                localStorage.setItem('userRole', data.role);
+
+                alert("Connexion réussie !");
+                window.location.href = '/';
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+        });
+    </script>
+</body>
+</html>

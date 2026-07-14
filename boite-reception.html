@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Boîte de Réception</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; color: #00008b; }
+        .message-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .msg-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #333; }
+        .msg-date { font-size: 0.85em; color: #666; margin-bottom: 10px; display: flex; align-items: center; }
+        .msg-content { font-size: 0.95em; color: #555; line-height: 1.4; }
+        .btn-back { display: inline-block; margin-bottom: 20px; color: #00008b; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <a href="catalogue.html" class="btn-back"><i class="fas fa-arrow-left"></i> Retour</a>
+
+    <div class="header">
+        <i class="fas fa-envelope-open-text fa-2x"></i>
+        <h2>Ma Boîte de Réception</h2>
+    </div>
+
+    <div id="inbox-container">
+        <p style="text-align:center; color:#888;">Chargement de vos messages...</p>
+    </div>
+
+    <script>
+        async function chargerMessages() {
+            const idClient = localStorage.getItem('userPhone');
+            const container = document.getElementById('inbox-container');
+
+            if (!idClient) {
+                container.innerHTML = '<p style="text-align:center; color:red;">Erreur : Utilisateur non connecté.</p>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/messages?id_client=${idClient}`);
+                const messages = await res.json();
+
+                container.innerHTML = '';
+                if(messages.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;">Aucun message pour le moment.</p>';
+                    return;
+                }
+
+                messages.forEach(msg => {
+                    // On extrait uniquement la date avant le " à "
+                    const date = msg.date_envoi ? msg.date_envoi.split(' à ')[0] : '';
+
+                    container.innerHTML += `
+                        <div class="message-card">
+                            <div class="msg-title">${msg.sujet}</div>
+                            <div class="msg-date">
+                                <span><i class="fas fa-calendar-alt"></i> ${date}</span>
+                            </div>
+                            <div class="msg-content">${msg.contenu}</div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                container.innerHTML = '<p style="text-align:center; color:red;">Erreur lors du chargement des messages.</p>';
+                console.error(err);
+            }
+        }
+        chargerMessages();
+    </script>
+</body>
+</html>

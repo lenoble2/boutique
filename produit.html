@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails du produit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .details-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+
+        /* Galerie défilable (Swipe) */
+        .left-side { flex: 1; min-width: 300px; overflow: hidden; }
+        .image-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; border-radius: 15px; }
+        .image-slider img { min-width: 100%; height: 300px; object-fit: cover; scroll-snap-align: start; border-radius: 15px; }
+
+        /* Partie droite */
+        .right-side { flex: 1; min-width: 300px; }
+        .product-name { font-size: 1.8em; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .product-cat { color: #888; font-size: 0.9em; margin-bottom: 10px; }
+        .product-price-current { font-size: 2em; color: #2e7d32; font-weight: bold; }
+        .product-desc { margin: 15px 0; color: #444; line-height: 1.5; }
+        .product-stock { font-size: 0.9em; color: #d32f2f; font-weight: bold; margin-bottom: 15px; }
+
+        .action-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-call { padding: 15px 20px; border-radius: 10px; border: 1px solid #ddd; background: white; cursor: pointer; }
+        .btn-achat { flex: 1; background: #f59e0b; color: white; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="details-card" id="details-container">
+        <p>Chargement en cours...</p>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+
+        fetch('/api/produits')
+            .then(res => res.json())
+            .then(data => {
+                const p = data.find(item => item.id == id);
+                const container = document.getElementById('details-container');
+
+                if (p) {
+                    // Correction ici : utilisation de p.stock au lieu de p.quantite
+                    container.innerHTML = `
+                        <div class="left-side">
+                            <div class="image-slider">
+                                <img src="${p.image}" alt="Image 1">
+                                <img src="${p.image2 || p.image}" alt="Image 2">
+                                <img src="${p.image3 || p.image}" alt="Image 3">
+                            </div>
+                        </div>
+                        <div class="right-side">
+                            <div class="product-name">${p.nom}</div>
+                            <div class="product-cat">Catégorie : ${p.categorie || 'Non défini'}</div>
+                            <div class="product-price-current">${p.prix} XOF</div>
+                            <div class="product-desc"><strong>Description :</strong><br>${p.description || 'Aucune description fournie'}</div>
+                            <div class="product-stock">Stock disponible : ${p.stock || 0} unité(s)</div>
+
+                            <div class="action-btns">
+                                <button class="btn-call" onclick="alert('Appel en cours...')"><i class="fas fa-phone"></i></button>
+                                <button class="btn-achat" onclick="ajouterAuPanier()">J'achète</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = "<p>Produit non trouvé.</p>";
+                }
+            });
+
+        function ajouterAuPanier() {
+            let panier = JSON.parse(localStorage.getItem('panier')) || [];
+            const nom = document.querySelector('.product-name').innerText;
+            const prix = document.querySelector('.product-price-current').innerText;
+            panier.push({ nom, prix });
+            localStorage.setItem('panier', JSON.stringify(panier));
+            alert("Ajouté au panier !");
+            window.location.href = 'catalogue.html';
+        }
+    </script>
+</body>
+</html>
