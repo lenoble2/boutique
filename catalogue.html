@@ -11,26 +11,21 @@
         .logo-text { font-weight: bold; font-size: 1.5em; }
         .user-header { background: #000066; color: #ffd700; padding: 5px 20px; font-size: 0.9em; font-weight: bold; text-align: center; }
         .nav-icons { display: flex; align-items: center; gap: 15px; }
-
         .cart-wrapper { position: relative; display: inline-block; color: white; text-decoration: none; font-weight: bold; margin-right: 5px; }
         .cart-badge { position: absolute; top: -8px; right: -8px; background-color: #ff9800; color: white; border-radius: 50%; padding: 1px 4px; font-size: 0.65em; font-weight: bold; min-width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; }
         .menu-btn { cursor: pointer; font-size: 1.2em; }
-
         #sideMenu { height: 100%; width: 0; position: fixed; z-index: 1000; top: 0; right: 0; background-color: white; overflow-x: hidden; transition: 0.5s; box-shadow: -2px 0 5px rgba(0,0,0,0.2); }
         .menu-content { padding: 20px; margin-top: 50px; }
         .menu-section-title { font-size: 0.8em; color: #888; margin: 20px 0 10px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .menu-item { display: flex; align-items: center; padding: 12px; cursor: pointer; color: #333; text-decoration: none; font-size: 0.95em; }
         .menu-item:hover { background-color: #f0f0f0; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 2em; cursor: pointer; }
-
         .banner-container { width: 100%; height: 150px; overflow: hidden; position: relative; background: #ddd; }
         .banner-slide { width: 100%; height: 100%; display: flex; transition: transform 0.5s ease-in-out; }
         .banner-slide img { min-width: 100%; height: 100%; object-fit: cover; }
-
         .filter-section { background: white; padding: 15px; margin: 20px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .filter-label { font-size: 0.8em; color: #777; margin: 10px 0 5px; }
         input, select { width: 100%; padding: 8px; border-radius: 0; border: 1px solid #ddd; outline: none; background: #f9f9f9; box-sizing: border-box; }
-
         .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; }
         .product-card { background: white; padding: 10px; border-radius: 0; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .product-img { width: 100%; height: 100px; background: #eee; border-radius: 0; margin-bottom: 10px; }
@@ -52,7 +47,12 @@
                 <i class="fas fa-shopping-cart"></i>
                 <span id="compteur-panier" class="cart-badge">0</span>
             </a>
-            <div class="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+            <div class="menu-btn" onclick="toggleMenu()" style="position: relative;">
+                <i class="fas fa-bars"></i>
+                <span id="paiement-badge" style="position: absolute; top: -5px; right: -5px; display: none;">
+                    <i class="fas fa-envelope" style="color: red; font-size: 0.6em;"></i>
+                </span>
+            </div>
         </div>
     </header>
 
@@ -69,7 +69,6 @@
     <div class="filter-section">
         <div class="filter-label">Rechercher</div>
         <input type="text" id="searchInput" placeholder="Nom du produit..." onkeyup="filtrerProduits()">
-
         <div class="filter-label">Catégorie</div>
         <select id="catFilter" onchange="filtrerProduits()">
             <option value="Tous">Toutes les catégories</option>
@@ -89,9 +88,36 @@
 
         localStorage.setItem('userRole', 'admin');
 
+        async function verifierPaiements() {
+            try {
+                const idClient = localStorage.getItem('userPhone');
+                if (!idClient) return;
+
+                const res = await fetch(`/api/check-paiements?id_client=${idClient}`);
+                const data = await res.json();
+                const badge = document.getElementById('paiement-badge');
+                
+                // Si le serveur dit qu'il y a de nouveaux paiements
+                if (data.nouveauxPaiements > 0) {
+                    badge.style.display = 'block';
+                    // On retire le statut "lu" pour que l'utilisateur soit forcé de re-cliquer
+                    localStorage.removeItem('messagesLus_' + idClient);
+                } else {
+                    // Sinon, on vérifie si l'utilisateur a déjà lu
+                    if (localStorage.getItem('messagesLus_' + idClient) === 'true') {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.log("Vérification paiement en attente d'API");
+            }
+        }
+        verifierPaiements();
+        setInterval(verifierPaiements, 60000);
+
         function mettreAJourCompteur() {
             const panier = JSON.parse(localStorage.getItem('panier')) || [];
-            const badge = document.getElementById('compteur-panier');                                                                     
+            const badge = document.getElementById('compteur-panier');
             badge.innerText = panier.length;
             badge.style.display = panier.length > 0 ? 'flex' : 'none';
         }
@@ -99,7 +125,7 @@
 
         const savedName = localStorage.getItem('userName');
         document.getElementById('userNameDisplay').textContent = savedName ? "Bienvenue, " + savedName : "Bienvenue, Invité";
-        
+
         function toggleMenu() {
             const menu = document.getElementById('sideMenu');
             menu.style.width = menu.style.width === "280px" ? "0" : "280px";
@@ -111,15 +137,13 @@
             { type: 'item', icon: "fa-box", text: "Vos commandes", link: "commandes.html" },
             { type: 'title', text: "NOS CATÉGORIES" },
             { type: 'item', icon: "fa-sign-out-alt", text: "Déconnexion", action: "deconnexion()" }
-        ];                                                     
+        ];
         const container = document.getElementById('menu-container');
-        if (localStorage.getItem('userRole') === 'admin') {                
+        if (localStorage.getItem('userRole') === 'admin') {
             container.innerHTML += `<div class="menu-section-title">ADMINISTRATION</div>`;
             container.innerHTML += `<div class="menu-item" onclick="window.location.href='boite-reception.html'"><i class="fas fa-envelope" style="margin-right:15px; width:20px;"></i> Boîte de réception</div>`;
-            // Lien "Ajouter un produit" annulé :
-            // container.innerHTML += `<div class="menu-item" onclick="window.location.href='ajout.html'"><i class="fas fa-plus-circle" style="margin-right:15px; width:20px;"></i> Ajouter un produit</div>`;
-        }                                                                                                                             
-        
+        }
+
         menuStructure.forEach(item => {
             if (item.type === 'title') {
                 container.innerHTML += `<div class="menu-section-title">${item.text}</div>`;
@@ -133,52 +157,47 @@
         });
 
         function deconnexion() {
-            if(confirm("Voulez-vous vraiment vous déconnecter ?")) {                                                                          
-                localStorage.removeItem('userName'); 
+            if(confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                localStorage.removeItem('userName');
                 localStorage.removeItem('userRole');
                 window.location.href = 'login.html';
-            }                                                          
+            }
         }
-        
         let tousLesProduits = [];
         fetch('/api/produits').then(res => res.json()).then(data => {
-            tousLesProduits = data;                                        
-            const select = document.getElementById('catFilter');                                                                          
-            [...new Set(data.map(p => p.categorie))].forEach(cat => {                                                                         
-                const opt = document.createElement('option'); 
-                opt.value = cat; 
-                opt.textContent = cat;                                         
+            tousLesProduits = data;
+            const select = document.getElementById('catFilter');
+            [...new Set(data.map(p => p.categorie))].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
                 select.appendChild(opt);
-            });                                                            
+            });
             afficherProduits(data);
-        });                                                    
-        
+        });
         function afficherProduits(liste) {
             const container = document.getElementById('product-container');
             container.innerHTML = '';
-            liste.forEach(p => {                                               
+            liste.forEach(p => {
                 container.innerHTML += `
                     <div class="product-card" onclick="window.location.href='produit.html?id=${p.id}'">
-                        <img src="${p.image}" class="product-img" alt="${p.nom}">                                                                     
+                        <img src="${p.image}" class="product-img" alt="${p.nom}">
                         <div class="product-name">${p.nom}</div>
                         <div class="product-price">${p.prix} XOF</div>
                     </div>`;
             });
         }
-
         function filtrerProduits() {
-            const rech = document.getElementById('searchInput').value.toLowerCase();                                                      
+            const rech = document.getElementById('searchInput').value.toLowerCase();
             const cat = document.getElementById('catFilter').value;
             afficherProduits(tousLesProduits.filter(p => (p.nom.toLowerCase().includes(rech)) && (cat === "Tous" || p.categorie === cat)));
-        }                                                      
+        }
 
         window.onerror = function(message, source, lineno, colno, error) {
             alert("Erreur JS : " + message);
         };
-
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-            .then(() => console.log('Service Worker enregistré !'));
+            navigator.serviceWorker.register('/sw.js').then(() => console.log('Service Worker enregistré !'));
         }
     </script>
 </body>

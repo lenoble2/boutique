@@ -8,9 +8,9 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; color: #00008b; }
-        .message-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .message-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .msg-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #333; }
-        .msg-date { font-size: 0.85em; color: #666; margin-bottom: 10px; display: flex; align-items: center; }
+        .msg-date { font-size: 0.85em; color: #666; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
         .msg-content { font-size: 0.95em; color: #555; line-height: 1.4; }
         .btn-back { display: inline-block; margin-bottom: 20px; color: #00008b; text-decoration: none; font-weight: bold; }
     </style>
@@ -29,12 +29,26 @@
     </div>
 
     <script>
+        // Fonction pour envoyer l'ordre au serveur de marquer les messages comme lus en base de données
+        async function marquerToutCommeLu() {
+            const idClient = localStorage.getItem('userPhone');
+            try {
+                await fetch('/api/marquer-lus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_client: idClient })
+                });
+            } catch (err) {
+                console.error("Erreur marquage lu :", err);
+            }
+        }
+
         async function chargerMessages() {
             const idClient = localStorage.getItem('userPhone');
             const container = document.getElementById('inbox-container');
 
             if (!idClient) {
-                container.innerHTML = '<p style="text-align:center; color:red;">Erreur : Utilisateur non connecté.</p>';
+                container.innerHTML = '<p style="text-align:center; color:red;">Erreur : Utilisateur non identifié</p>';
                 return;
             }
 
@@ -48,10 +62,14 @@
                     return;
                 }
 
-                messages.forEach(msg => {
-                    // On extrait uniquement la date avant le " à "
-                    const date = msg.date_envoi ? msg.date_envoi.split(' à ')[0] : '';
+                // 1. On marque dans le localStorage (pour l'interface)
+                localStorage.setItem('messagesLus_' + idClient, 'true');
+                
+                // 2. On appelle le serveur pour mettre à jour la base de données
+                await marquerToutCommeLu();
 
+                messages.forEach(msg => {
+                    const date = msg.date_envoi ? msg.date_envoi.split(' à ')[0] : '';
                     container.innerHTML += `
                         <div class="message-card">
                             <div class="msg-title">${msg.sujet}</div>
@@ -63,7 +81,7 @@
                     `;
                 });
             } catch (err) {
-                container.innerHTML = '<p style="text-align:center; color:red;">Erreur lors du chargement des messages.</p>';
+                container.innerHTML = '<p style="text-align:center; color:red;">Erreur lors du chargement.</p>';
                 console.error(err);
             }
         }

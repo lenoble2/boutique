@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
+<head>                                                                                                                                                        
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                    
     <title>Mon Panier</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
-        .panier-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    <style>                                                                                                                                                       
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }                                                                         
+        .panier-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }                                           
         .item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding: 5px 0; }
-        .delete-btn { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }
-        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; color: #00008b; }
-        .form-group { margin-top: 20px; }
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }                                                                        
+        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; color: #00008b; }                                                                         
+        .form-group { margin-top: 20px; }                                                                                                                         
         .form-group input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-payer { background: #2e7d32; color: white; padding: 15px; border-radius: 15px; border: none; width: 100%; cursor: pointer; margin-bottom: 10px; }
         .btn-vider { background: #d32f2f; color: white; padding: 10px; border-radius: 10px; border: none; width: 100%; cursor: pointer; }
@@ -23,7 +23,7 @@
         <div id="panier-items"></div>
         <div class="total" id="total-display">Total : 0 XOF</div>
 
-        <div class="form-group">
+        <div class="form-group">                                                                                                                                      
             <input type="text" id="adresse" placeholder="Adresse de livraison" required>
             <input type="tel" id="telephone" placeholder="Numéro de téléphone" required>
         </div>
@@ -46,13 +46,14 @@
         }
 
         panier.forEach((item, index) => {
-            const prixNum = parseInt(item.prix.replace(/\D/g, '')); // Nettoyage du prix
+            // Nettoyage : on récupère le nombre et on divise par 100 pour enlever les 2 zéros
+            const prixNum = parseInt(item.prix.replace(/\D/g, '')) / 100; 
             total += prixNum;
             container.innerHTML += `
                 <div class="item">
                     <span>${item.nom}</span>
                     <span>
-                        ${item.prix} 
+                        ${prixNum.toLocaleString()} XOF
                         <span class="delete-btn" onclick="supprimerArticle(${index})">&times;</span>
                     </span>
                 </div>`;
@@ -83,7 +84,7 @@
                     body: JSON.stringify({
                         id_client: telephone,
                         nom_article: articlesNoms,
-                        prix: total,
+                        prix: total * 100, // On remet les 2 zéros pour l'enregistrement base de données
                         adresse: adresse,
                         telephone: telephone
                     })

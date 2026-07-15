@@ -78,10 +78,15 @@
         commandes.forEach(c => {
             const statusClass = c.statut === 'paye' ? 'bg-green' : 'bg-green';
 
-            // Fusion de l'article et du prix sous l'ID commande
-            const infoCmd = `${c.id_commande}<br><small><strong>${c.nom_article}</strong> - ${c.prix} XOF</small>`;
+            // On divise par 100 pour enlever les 2 zéros finaux
+            const totalAffiche = (parseFloat(c.total_commande || c.prix) / 100).toLocaleString();
 
-            // Logique pour récupérer l'heure, soit depuis la base, soit extraite de l'ID
+            const infoCmd = `<strong>${c.id_commande}</strong><br>
+                             <small style="color:#555;">${c.nom_article}</small><br>
+                             <div style="margin-top:5px;">
+                                <strong style="color:#00008b;">Total: ${totalAffiche} XOF</strong>
+                             </div>`;
+
             let heureAffichee = c.heure_commande;
             if (!heureAffichee && c.id_commande) {
                 const idStr = c.id_commande.toString();

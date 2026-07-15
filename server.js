@@ -268,3 +268,28 @@ app.get('/api/produits', async (req, res) => {
     res.json(rows);
 });
 
+
+// Route pour vérifier s'il y a des paiements non traités (en attente)
+app.get('/api/check-paiements', async (req, res) => {
+    const id_client = req.query.id_client;
+    try {
+        // Cette requête compte les messages non lus pour ce client précis
+        const [rows] = await db.query("SELECT COUNT(*) as total FROM messages WHERE id_client = ? AND lu = 0", [id_client]);
+        res.json({ nouveauxPaiements: rows[0].total });
+    } catch (err) {
+        console.error("Erreur API check-paiements :", err);
+        res.status(500).json({ nouveauxPaiements: 0 });
+    }
+});
+
+
+app.post('/api/marquer-lus', async (req, res) => {
+    try {
+        const { id_client } = req.body;
+        // Met à jour tous les messages du client à lu = 1
+        await db.query("UPDATE messages SET lu = 1 WHERE id_client = ?", [id_client]);
+        res.status(200).json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
