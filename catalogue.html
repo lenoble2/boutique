@@ -59,15 +59,11 @@
     <div class="user-header" id="userNameDisplay">Chargement...</div>
 
     <div class="banner-container">
-
-
-<div class="banner-slide" id="slider">
-    <img src="pub1.jpg" alt="Pub 1">
-    <img src="pub2.jpg" alt="Pub 2">
-    <img src="pub3.jpg" alt="Pub 3">
-</div>
-
-
+        <div class="banner-slide" id="slider">
+            <img src="pub1.jpg" alt="Pub 1">
+            <img src="pub2.jpg" alt="Pub 2">
+            <img src="pub3.jpg" alt="Pub 3">
+        </div>
     </div>
 
     <div class="filter-section">
@@ -95,7 +91,7 @@
 
         function mettreAJourCompteur() {
             const panier = JSON.parse(localStorage.getItem('panier')) || [];
-            const badge = document.getElementById('compteur-panier');
+            const badge = document.getElementById('compteur-panier');                                                                     
             badge.innerText = panier.length;
             badge.style.display = panier.length > 0 ? 'flex' : 'none';
         }
@@ -103,7 +99,7 @@
 
         const savedName = localStorage.getItem('userName');
         document.getElementById('userNameDisplay').textContent = savedName ? "Bienvenue, " + savedName : "Bienvenue, Invité";
-
+        
         function toggleMenu() {
             const menu = document.getElementById('sideMenu');
             menu.style.width = menu.style.width === "280px" ? "0" : "280px";
@@ -115,15 +111,15 @@
             { type: 'item', icon: "fa-box", text: "Vos commandes", link: "commandes.html" },
             { type: 'title', text: "NOS CATÉGORIES" },
             { type: 'item', icon: "fa-sign-out-alt", text: "Déconnexion", action: "deconnexion()" }
-        ];
-
+        ];                                                     
         const container = document.getElementById('menu-container');
-        if (localStorage.getItem('userRole') === 'admin') {
+        if (localStorage.getItem('userRole') === 'admin') {                
             container.innerHTML += `<div class="menu-section-title">ADMINISTRATION</div>`;
             container.innerHTML += `<div class="menu-item" onclick="window.location.href='boite-reception.html'"><i class="fas fa-envelope" style="margin-right:15px; width:20px;"></i> Boîte de réception</div>`;
-            container.innerHTML += `<div class="menu-item" onclick="window.location.href='ajout.html'"><i class="fas fa-plus-circle" style="margin-right:15px; width:20px;"></i> Ajouter un produit</div>`;
-        }
-
+            // Lien "Ajouter un produit" annulé :
+            // container.innerHTML += `<div class="menu-item" onclick="window.location.href='ajout.html'"><i class="fas fa-plus-circle" style="margin-right:15px; width:20px;"></i> Ajouter un produit</div>`;
+        }                                                                                                                             
+        
         menuStructure.forEach(item => {
             if (item.type === 'title') {
                 container.innerHTML += `<div class="menu-section-title">${item.text}</div>`;
@@ -137,31 +133,33 @@
         });
 
         function deconnexion() {
-            if(confirm("Voulez-vous vraiment vous déconnecter ?")) {
-                localStorage.removeItem('userName'); localStorage.removeItem('userRole');
+            if(confirm("Voulez-vous vraiment vous déconnecter ?")) {                                                                          
+                localStorage.removeItem('userName'); 
+                localStorage.removeItem('userRole');
                 window.location.href = 'login.html';
-            }
+            }                                                          
         }
-
+        
         let tousLesProduits = [];
-        // Mise à jour de l'appel vers l'API au lieu du fichier .json
         fetch('/api/produits').then(res => res.json()).then(data => {
-            tousLesProduits = data;
-            const select = document.getElementById('catFilter');
-            [...new Set(data.map(p => p.categorie))].forEach(cat => {
-                const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat;
+            tousLesProduits = data;                                        
+            const select = document.getElementById('catFilter');                                                                          
+            [...new Set(data.map(p => p.categorie))].forEach(cat => {                                                                         
+                const opt = document.createElement('option'); 
+                opt.value = cat; 
+                opt.textContent = cat;                                         
                 select.appendChild(opt);
-            });
+            });                                                            
             afficherProduits(data);
-        });
-
+        });                                                    
+        
         function afficherProduits(liste) {
             const container = document.getElementById('product-container');
             container.innerHTML = '';
-            liste.forEach(p => {
+            liste.forEach(p => {                                               
                 container.innerHTML += `
                     <div class="product-card" onclick="window.location.href='produit.html?id=${p.id}'">
-                        <img src="${p.image}" class="product-img" alt="${p.nom}">
+                        <img src="${p.image}" class="product-img" alt="${p.nom}">                                                                     
                         <div class="product-name">${p.nom}</div>
                         <div class="product-price">${p.prix} XOF</div>
                     </div>`;
@@ -169,17 +167,19 @@
         }
 
         function filtrerProduits() {
-            const rech = document.getElementById('searchInput').value.toLowerCase();
+            const rech = document.getElementById('searchInput').value.toLowerCase();                                                      
             const cat = document.getElementById('catFilter').value;
             afficherProduits(tousLesProduits.filter(p => (p.nom.toLowerCase().includes(rech)) && (cat === "Tous" || p.categorie === cat)));
+        }                                                      
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("Erreur JS : " + message);
+        };
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('Service Worker enregistré !'));
         }
-
-
-window.onerror = function(message, source, lineno, colno, error) {
-    alert("Erreur JS : " + message);
-};
-
-
     </script>
 </body>
 </html>

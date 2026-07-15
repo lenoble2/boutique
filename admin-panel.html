@@ -9,7 +9,8 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 40px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #00008b; color: white; }
-        .btn-back { background: #555; color: white; padding: 10px; border-radius: 8px; text-decoration: none; }
+        .btn-back { background: #555; color: white; padding: 10px; border-radius: 8px; text-decoration: none; margin-right: 10px; }
+        .btn-add { background: #008b00; color: white; padding: 10px; border-radius: 8px; text-decoration: none; }
         .status-btn { width: 25px; height: 25px; border-radius: 50%; border: none; cursor: pointer; display: block; margin: 0 auto; }
         .bg-red { background-color: red; }
         .bg-green { background-color: green; }
@@ -20,6 +21,7 @@
 <div class="container">
     <h2>Tableau de bord administrateur</h2>
     <a href="catalogue.html" class="btn-back">Retour au catalogue</a>
+    <a href="ajout.html" class="btn-add">Ajouter produit</a>
 
     <h3>Liste des utilisateurs</h3>
     <table>
@@ -75,18 +77,18 @@
         tbody.innerHTML = '';
         commandes.forEach(c => {
             const statusClass = c.statut === 'paye' ? 'bg-green' : 'bg-green';
-            
+
             // Fusion de l'article et du prix sous l'ID commande
             const infoCmd = `${c.id_commande}<br><small><strong>${c.nom_article}</strong> - ${c.prix} XOF</small>`;
-            
+
             // Logique pour récupérer l'heure, soit depuis la base, soit extraite de l'ID
             let heureAffichee = c.heure_commande;
             if (!heureAffichee && c.id_commande) {
                 const idStr = c.id_commande.toString();
-                const timePart = idStr.slice(-4); 
+                const timePart = idStr.slice(-4);
                 heureAffichee = timePart.slice(0, 2) + ":" + timePart.slice(2);
             }
-            
+
             const dateComplete = `${c.date_commande} à ${heureAffichee || '00:00'}`;
 
             tbody.innerHTML += `
