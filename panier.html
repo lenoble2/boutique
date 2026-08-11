@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>                                                                                                                                                        
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Panier</title>
-    <style>                                                                                                                                                       
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }                                                                         
-        .panier-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }                                           
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
+        .panier-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         .item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding: 5px 0; }
-        .delete-btn { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }                                                                        
-        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; color: #00008b; }                                                                         
-        .form-group { margin-top: 20px; }                                                                                                                         
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; color: #00008b; }
+        .form-group { margin-top: 20px; }
         .form-group input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .btn-payer { background: #2e7d32; color: white; padding: 15px; border-radius: 15px; border: none; width: 100%; cursor: pointer; margin-bottom: 10px; }
+        .btn-payer { background: #2e7d32; color: white; padding: 15px; border-radius: 15px; border: none; width: 100%; cursor: pointer; margin-bottom: 10px; font-size: 16px; font-weight: bold; }
         .btn-vider { background: #d32f2f; color: white; padding: 10px; border-radius: 10px; border: none; width: 100%; cursor: pointer; }
+
+        /* Style de la modale d'étiquette de paiement */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .modal-content h3 { margin-top: 0; color: #333; }
+        .btn-payment-option { display: block; width: 100%; padding: 14px; margin: 12px 0; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; box-sizing: border-box; }
+        .btn-wave { background: #1dc2ff; color: white; }
+        .btn-orange { background: #ff7900; color: white; }
+        .btn-fermer { background: #ccc; color: #333; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -23,13 +32,31 @@
         <div id="panier-items"></div>
         <div class="total" id="total-display">Total : 0 XOF</div>
 
-        <div class="form-group">                                                                                                                                      
+        <div class="form-group">
             <input type="text" id="adresse" placeholder="Adresse de livraison" required>
             <input type="tel" id="telephone" placeholder="Numéro de téléphone" required>
         </div>
 
-        <button class="btn-payer" onclick="payerViaLeanPay()">Payer avec LeanPay</button>
+        <button class="btn-payer" onclick="ouvrirEtiquettePaiement()">Payer avec LeanPay</button>
         <button class="btn-vider" onclick="viderPanier()">Vider le panier</button>
+    </div>
+
+    <!-- Modale Étiquette de Paiement (Wave & Orange Money) -->
+    <div id="modalPaiement" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Choisissez votre mode de paiement</h3>
+            <p>Montant à régler : <strong id="modal-total">0</strong> XOF</p>
+            
+            <a href="https://pay.wave.com/m/M_ci__GnbcKnQi9ex/c/ci/" target="_blank" class="btn-payment-option btn-wave" onclick="validerCommandeEtRediriger()">
+                Payer avec Wave
+            </a>
+            
+            <a href="https://multi.app.orange-money.com/app/v1/kapptivate/qrcode/odyssee/?id=codgen101-c32743e88181456581427f55edc3c1a2&v=1" target="_blank" class="btn-payment-option btn-orange" onclick="validerCommandeEtRediriger()">
+                Payer avec Orange Money
+            </a>
+
+            <button class="btn-payment-option btn-fermer" onclick="fermerModal()">Annuler</button>
+        </div>
     </div>
 
     <script>
@@ -46,8 +73,7 @@
         }
 
         panier.forEach((item, index) => {
-            // Nettoyage : on récupère le nombre et on divise par 100 pour enlever les 2 zéros
-            const prixNum = parseInt(item.prix.replace(/\D/g, '')) / 100; 
+            const prixNum = parseInt(item.prix.replace(/\D/g, '')) / 100;
             total += prixNum;
             container.innerHTML += `
                 <div class="item">
@@ -61,7 +87,7 @@
 
         displayTotal.innerText = `Total : ${total.toLocaleString()} XOF`;
 
-        async function payerViaLeanPay() {
+        function ouvrirEtiquettePaiement() {
             const adresse = document.getElementById('adresse').value;
             const telephone = document.getElementById('telephone').value;
 
@@ -75,10 +101,23 @@
                 return;
             }
 
+            // Afficher le montant dans la modale
+            document.getElementById('modal-total').innerText = total.toLocaleString();
+            document.getElementById('modalPaiement').style.display = 'flex';
+        }
+
+        function fermerModal() {
+            document.getElementById('modalPaiement').style.display = 'none';
+        }
+
+        async function validerCommandeEtRediriger() {
+            const adresse = document.getElementById('adresse').value;
+            const telephone = document.getElementById('telephone').value;
             const articlesNoms = panier.map(item => item.nom).join(', ');
 
             try {
-                const res = await fetch('/api/ajouter-commande', {
+                // Enregistrement de la commande en arrière-plan sur le serveur
+                await fetch('/api/ajouter-commande', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -90,16 +129,17 @@
                     })
                 });
 
-                if (res.ok) {
-                    alert("Paiement effectué avec succès !");
-                    localStorage.removeItem('panier');
-                    window.location.href = 'catalogue.html';
-                } else {
-                    alert("Erreur lors du paiement.");
-                }
+                // Nettoyage du panier après l'envoi de la commande
+                localStorage.removeItem('panier');
             } catch (err) {
-                alert("Erreur de connexion au serveur.");
+                console.error("Erreur lors de l'enregistrement de la commande :", err);
             }
+
+            // Fermeture de la modale et redirection vers le catalogue après un court délai
+            fermerModal();
+            setTimeout(() => {
+                window.location.href = 'catalogue.html';
+            }, 1000);
         }
 
         function viderPanier() {
